@@ -1,0 +1,86 @@
+import sqlite3
+
+class CarroManager:
+    def _init_(self, db_name='carros.db'):
+        self.db_name = db_name
+        self.create_table()
+
+    def create_table(self):
+        with sqlite3.connect(self.db_name) as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+            CREATE TABLE IF NOT EXISTS carros (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                tipo TEXT NOT NULL,
+                ano INTEGER NOT NULL,
+                quantidade_portas INTEGER NOT NULL,
+                potencia REAL NOT NULL
+            )
+            ''')
+
+    def cadastrar_carro(self):
+        tipo = input("Digite o tipo do carro: ")
+        ano = int(input("Digite o ano do carro: "))
+        quantidade_portas = int(input("Digite a quantidade de portas do carro: "))
+        potencia = float(input("Digite a potência do carro: "))
+
+        with sqlite3.connect(self.db_name) as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+            INSERT INTO carros (tipo, ano, quantidade_portas, potencia)
+            VALUES (?, ?, ?, ?)
+            ''', (tipo, ano, quantidade_portas, potencia))
+            conn.commit()
+            print("Carro cadastrado com sucesso!")
+
+    def listar_carros(self):
+        with sqlite3.connect(self.db_name) as conn:
+            cursor = conn.cursor()
+            cursor.execute('SELECT * FROM carros')
+            carros = cursor.fetchall()
+
+            if carros:
+                for carro in carros:
+                    print(f"ID: {carro[0]}, Tipo: {carro[1]}, Ano: {carro[2]}, Portas: {carro[3]}, Potência: {carro[4]}")
+            else:
+                print("Nenhum carro cadastrado.")
+
+    def buscar_carro(self):
+        id_carro = int(input("Digite o identificador do carro: "))
+
+        with sqlite3.connect(self.db_name) as conn:
+            cursor = conn.cursor()
+            cursor.execute('SELECT * FROM carros WHERE id = ?', (id_carro,))
+            carro = cursor.fetchone()
+
+            if carro:
+                print(f"ID: {carro[0]}, Tipo: {carro[1]}, Ano: {carro[2]}, Portas: {carro[3]}, Potência: {carro[4]}")
+            else:
+                print("Carro não encontrado.")
+
+    def menu(self):
+        while True:
+            print("\nMenu:")
+            print("1. Cadastrar carro")
+            print("2. Listar carros")
+            print("3. Buscar carro por identificador")
+            print("4. Sair")
+
+            opcao = input("Digite a opção desejada: ")
+
+            if opcao == "1":
+                self.cadastrar_carro()
+            elif opcao == "2":
+                self.listar_carros()
+            elif opcao == "3":
+                self.buscar_carro()
+            elif opcao == "4":
+                print("Saindo do programa...")
+                break
+            else:
+                print("Opção inválida. Tente novamente.")
+
+# Executar o programa
+if _name_ == '_main_':
+    manager = CarroManager()
+    manager.menu()
