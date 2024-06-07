@@ -1,0 +1,180 @@
+import sqlite3
+import hashlib
+
+class CarroManager:
+    def __init__(self, db_name='carros.db'):
+        self.db_name = db_name
+        self.create_tables()
+
+    def create_tables(self):
+        with sqlite3.connect(self.db_name) as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+            CREATE TABLE IF NOT EXISTS carros (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                tipo TEXT NOT NULL,
+                ano INTEGER NOT NULL,
+                quantidade_portas INTEGER NOT NULL,
+                potencia REAL NOT NULL
+            )
+            ''')
+            cursor.execute('''
+            CREATE TABLE IF NOT EXISTS usuarios (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                nome TEXT NOT NULL,
+                email TEXT NOT NULL UNIQUE,
+                senha TEXT NOT NULL
+            )
+            ''')
+
+    def cadastrar_usuario(self):
+        nome = input("Digite o nome do usuário: ")
+        email = input("Digite o email do usuário: ")
+        senha = input("Digite a senha do usuário: ")
+        senha_hash = hashlib.sha256(senha.encode()).hexdigest()
+
+        with sqlite3.connect(self.db_name) as conn:
+            cursor = conn.cursor()
+            try:
+                cursor.execute('''
+                INSERT INTO usuarios (nome, email, senha)
+                VALUES (?, ?, ?)
+                ''', (nome, email, senha_hash))
+                conn.commit()
+                print("Usuário cadastrado com sucesso!")
+            except sqlite3.IntegrityError:
+                print("Erro: Email já cadastrado.")
+
+    def login(self):
+        email = input("Digite o email: ")
+        senha = input("Digite a senha: ")
+        senha_hash = hashlib.sha256(senha.encode()).hexdigest()
+
+        with sqlite3.connect(self.db_name) as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+            SELECT * FROM usuarios WHERE email = ? AND senha = ?
+            ''', (email, senha_hash))
+            usuario = cursor.fetchone()
+            if usuario:
+                print("Login realizado com sucesso!")
+                self.menu_interno()
+            else:
+                print("Email ou senha incorretos.")
+
+    def cadastrar_carro(self):
+        tipo = input("Digite o tipo do carro: ")
+        ano = int(input("Digite o ano do carro: "))
+        quantidade_portas = int(input("Digite a quantidade de portas do carro: "))
+        potencia = float(input("Digite a potência do carro: "))
+
+        with sqlite3.connect(self.db_name) as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+            INSERT INTO carros (tipo, ano, quantidade_portas, potencia)
+            VALUES (?, ?, ?, ?)
+            ''', (tipo, ano, quantidade_portas, potencia))
+            conn.commit()
+            print("Carro cadastrado com sucesso!")
+
+    def listar_carros(self):
+        with sqlite3.connect(self.db_name) as conn:
+            cursor = conn.cursor()
+            cursor.execute('SELECT * FROM carros')
+            carros = cursor.fetchall()
+
+            if carros:
+                for carro in carros:
+                    print(f"ID: {carro[0]}, Tipo: {carro[1]}, Ano: {carro[2]}, Portas: {carro[3]}, Potência: {carro[4]}")
+            else:
+                print("Nenhum carro cadastrado.")
+
+    def buscar_carro(self):
+        id_carro = int(input("Digite o identificador do carro: "))
+
+        with sqlite3.connect(self.db_name) as conn:
+            cursor = conn.cursor()
+            cursor.execute('SELECT * FROM carros WHERE id = ?', (id_carro,))
+            carro = cursor.fetchone()
+
+            if carro:
+                print(f"ID: {carro[0]}, Tipo: {carro[1]}, Ano: {carro[2]}, Portas: {carro[3]}, Potência: {carro[4]}")
+            else:
+                print("Carro não encontrado.")
+
+    def atualizar_carro(self):
+        id_carro = int(input("Digite o identificador do carro que deseja atualizar: "))
+        tipo = input("Digite o novo tipo do carro: ")
+        ano = int(input("Digite o novo ano do carro: "))
+        quantidade_portas = int(input("Digite a nova quantidade de portas do carro: "))
+        potencia = float(input("Digite a nova potência do carro: "))
+
+        with sqlite3.connect(self.db_name) as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+            UPDATE carros SET tipo = ?, ano = ?, quantidade_portas = ?, potencia = ?
+            WHERE id = ?
+            ''', (tipo, ano, quantidade_portas, potencia, id_carro))
+            conn.commit()
+            print("Carro atualizado com sucesso!")
+
+    def deletar_carro(self):
+        id_carro = int(input("Digite o identificador do carro que deseja deletar: "))
+
+        with sqlite3.connect(self.db_name) as conn:
+            cursor = conn.cursor()
+            cursor.execute('DELETE FROM carros WHERE id = ?', (id_carro,))
+            conn.commit()
+            print("Carro deletado com sucesso!")
+
+    def menu_interno(self):
+        while True:
+            print("\nMenu Interno:")
+            print("1. Cadastrar carro")
+            print("2. Listar carros")
+            print("3. Buscar carro por identificador")
+            print("4. Atualizar carro")
+            print("5. Deletar carro")
+            print("6. Sair")
+
+            opcao = input("Digite a opção desejada: ")
+
+            if opcao == "1":
+                self.cadastrar_carro()
+            elif opcao == "2":
+                self.listar_carros()
+            elif opcao == "3":
+                self.buscar_carro()
+            elif opcao == "4":
+                self.atualizar_carro()
+            elif opcao == "5":
+                self.deletar_carro()
+            elif opcao == "6":
+                print("Saindo do menu interno...")
+                break
+            else:
+                print("Opção inválida. Tente novamente.")
+
+    def menu(self):
+        while True:
+            print("\nMenu:")
+            print("1. Cadastrar usuário")
+            print("2. Realizar login")
+            print("3. Sair")
+
+            opcao = input("Digite a opção desejada: ")
+
+            if opcao == "1":
+                self.cadastrar_usuario()
+            elif opcao == "2":
+                self.login()
+            elif opcao == "3":
+                print("Saindo do programa...")
+                break
+            else:
+                print("Opção inválida. Tente novamente.")
+
+# Executar o programa
+if __name__ == '__main__':
+    manager = CarroManager()
+    manager.menu()
